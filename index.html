@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>psinna55</title>
+<meta name="description" content="psinna55, minecraft pvp. tiers cis / atiers.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23000'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23f0f0f0'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Fira+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#000;
+  --fg:#f0f0f0;
+  --dim:#5c5c5c;
+  --line:#1f1f1f;
+  --f-black:"UnifrakturMaguntia", "Old English Text MT", serif;
+  --f-mono:"Fira Mono", ui-monospace, Consolas, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);margin:0}
+:root{padding-top:env(safe-area-inset-top, 0px);padding-bottom:env(safe-area-inset-bottom, 0px)}
+body{color:var(--fg);font-family:var(--f-mono);font-size:15px;line-height:1.7;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--fg);color:var(--bg)}
+:focus-visible{outline:1px solid var(--fg);outline-offset:4px}
+
+.grain{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.09;mix-blend-mode:screen}
+
+.wrap{
+  max-width:1040px;margin:0 auto;position:relative;z-index:1;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:28px 40px;
+}
+
+.top{display:flex;justify-content:space-between;gap:16px;color:var(--dim);font-size:13px}
+
+#name{display:block;width:100%;height:clamp(150px, 30vw, 320px);margin-top:24px;cursor:crosshair;touch-action:pan-y}
+h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+.sub{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--dim);font-size:13px;margin-top:6px}
+.sub b{color:var(--fg);font-weight:500}
+
+.body{display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;margin-top:72px;border-top:1px solid var(--line);padding-top:28px}
+.col{min-width:0}
+.col h2{font-family:var(--f-black);font-weight:400;font-size:34px;line-height:1;margin:0 0 18px}
+.col h2 small{font-family:var(--f-mono);font-size:12px;color:var(--dim);margin-left:8px;vertical-align:middle}
+
+.tiers{list-style:none;margin:0;padding:0}
+.tiers li{display:grid;grid-template-columns:44px 1fr;gap:10px;padding:3px 6px;margin:0 -6px;cursor:default;transition:background .08s,color .08s}
+.tiers li .t{color:var(--dim)}
+.tiers li.ht .t{color:var(--fg)}
+.tiers li.lit{background:var(--fg);color:var(--bg)}
+.tiers li.lit .t{color:var(--bg)}
+
+.links{display:flex;flex-direction:column;gap:6px}
+.lnk{display:grid;grid-template-columns:44px 1fr auto;gap:10px;padding:3px 6px;margin:0 -6px;background:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.lnk .t{color:var(--dim)}
+.lnk .a{color:var(--dim)}
+.lnk:hover{background:var(--fg);color:var(--bg)}
+.lnk:hover .t,.lnk:hover .a{color:var(--bg)}
+
+.quote{margin-top:34px;font-family:var(--f-black);font-size:28px;line-height:1.15;color:var(--fg)}
+
+footer{margin-top:96px;display:flex;justify-content:space-between;gap:16px;color:var(--dim);font-size:12px}
+
+@media (max-width:760px){
+  .body{grid-template-columns:1fr 1fr;gap:32px 24px}
+  .body .col:last-child{grid-column:1 / -1}
+}
+</style>
+</head>
+<body>
+
+<canvas class="grain" id="grain" aria-hidden="true"></canvas>
+
+<div class="wrap">
+  <div class="top"><span>minecraft pvp</span><span id="clock">msk</span></div>
+
+  <h1>psinna55</h1>
+  <canvas id="name" aria-hidden="true"></canvas>
+  <div class="sub"><span><b>40</b> pts cis</span><span>i dont play on tier</span></div>
+
+  <div class="body">
+    <div class="col">
+      <h2>cis <small>8</small></h2>
+      <ul class="tiers" id="cis"></ul>
+    </div>
+    <div class="col">
+      <h2>atiers <small>11</small></h2>
+      <ul class="tiers" id="at"></ul>
+    </div>
+    <div class="col">
+      <h2>links</h2>
+      <div class="links">
+        <a class="lnk" href="https://t.me/psinna55" target="_blank" rel="noopener"><span class="t">tg</span><span>@psinna55</span><span class="a">&#8599;</span></a>
+        <button class="lnk" id="ds" type="button"><span class="t">ds</span><span id="ds-name">psinna55</span><span class="a" id="ds-a">copy</span></button>
+      </div>
+      <div class="quote">i love pipa &#9829;</div>
+    </div>
+  </div>
+
+  <footer><span>psinna55</span><span>2026</span></footer>
+</div>
+
+<script>
+const CIS = [["ht5","cpvp"],["lt3","sword"],["lt3","op"],["lt3","pot"],["lt3","uhc"],["lt3","axe"],["ht4","smp"],["ht4","mace"]];
+const AT  = [["lt3","op"],["lt3","smp"],["lt3","dsmp"],["lt3","mace"],["lt4","cpvp"],["lt3","axe"],["lt3","uhc"],["lt4","creeper"],["lt3","sword"],["lt3","npot"],["lt3","suhc"]];
+const key = m => m === "npot" ? "pot" : m;
+const fill = (id, list) => {
+  document.getElementById(id).innerHTML = list.map(([t,m]) =>
+    `<li tabindex="0" data-k="${key(m)}" class="${t[0]==="h"?"ht":""}"><span class="t">${t}</span><span>${m}</span></li>`).join("");
+};
+fill("cis", CIS); fill("at", AT);
+const rows = document.querySelectorAll(".tiers li");
+const lit = k => rows.forEach(r => r.classList.toggle("lit", r.dataset.k === k));
+rows.forEach(r => {
+  r.addEventListener("pointerenter", () => lit(r.dataset.k));
+  r.addEventListener("pointerleave", () => lit(null));
+  r.addEventListener("focus", () => lit(r.dataset.k));
+  r.addEventListener("blur", () => lit(null));
+});
+
+document.getElementById("ds").addEventListener("click", () => {
+  const a = document.getElementById("ds-a");
+  const done = t => { a.textContent = t; setTimeout(() => a.textContent = "copy", 1400); };
+  const fallback = () => {
+    const s = getSelection(), r = document.createRange();
+    r.selectNodeContents(document.getElementById("ds-name")); s.removeAllRanges(); s.addRange(r);
+    done("ctrl+c");
+  };
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText("psinna55").then(() => done("copied"), fallback);
+  else fallback();
+});
+
+const clock = document.getElementById("clock");
+const tick = () => { try { clock.textContent = new Date().toLocaleTimeString("ru-RU",{timeZone:"Europe/Moscow",hour:"2-digit",minute:"2-digit"}) + " msk"; } catch(e){} };
+tick(); setInterval(tick, 20000);
+
+(() => {
+  const c = document.getElementById("grain"), g = c.getContext("2d");
+  c.width = 220; c.height = 220; c.style.width = "100%"; c.style.height = "100%";
+  const img = g.createImageData(220, 220);
+  const draw = () => {
+    for (let i = 0; i < img.data.length; i += 4){ const v = Math.random()*255|0; img.data[i]=img.data[i+1]=img.data[i+2]=v; img.data[i+3]=255; }
+    g.putImageData(img, 0, 0);
+  };
+  draw();
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) setInterval(draw, 90);
+})();
+
+(() => {
+  const cv = document.getElementById("name"), ctx = cv.getContext("2d");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let P = [], W = 0, H = 0, dpr = 1, mx = -9999, my = -9999;
+
+  function build(){
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    const off = document.createElement("canvas"); off.width = W; off.height = H;
+    const o = off.getContext("2d");
+    let fs = H * 0.95;
+    o.font = `${fs}px UnifrakturMaguntia, serif`;
+    const w = o.measureText("psinna55").width;
+    if (w > W * 0.98) { fs *= (W * 0.98) / w; o.font = `${fs}px UnifrakturMaguntia, serif`; }
+    o.fillStyle = "#fff"; o.textBaseline = "middle";
+    o.fillText("psinna55", 0, H * 0.54);
+    const d = o.getImageData(0, 0, W, H).data;
+    const step = W < 500 ? 2 : 3;
+    P = [];
+    for (let y = 0; y < H; y += step) for (let x = 0; x < W; x += step){
+      if (d[(y * W + x) * 4 + 3] > 128) P.push({hx:x, hy:y, x, y, vx:0, vy:0, s: Math.random() < .15 ? 1.6 : 1.1});
+    }
+  }
+
+  function frame(){
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = "#f0f0f0";
+    const R = 70, R2 = R * R;
+    for (const p of P){
+      const dx = p.x - mx, dy = p.y - my, d2 = dx*dx + dy*dy;
+      if (d2 < R2){ const f = (1 - d2 / R2) * 6, d = Math.sqrt(d2) || 1; p.vx += dx / d * f; p.vy += dy / d * f; }
+      p.vx += (p.hx - p.x) * .06; p.vy += (p.hy - p.y) * .06;
+      p.vx *= .82; p.vy *= .82;
+      p.x += p.vx; p.y += p.vy;
+      ctx.fillRect(p.x, p.y, p.s, p.s);
+    }
+    if (!reduce) requestAnimationFrame(frame);
+  }
+
+  const pos = e => { const r = cv.getBoundingClientRect(); mx = e.clientX - r.left; my = e.clientY - r.top; };
+  cv.addEventListener("pointermove", pos);
+  cv.addEventListener("pointerdown", pos);
+  cv.addEventListener("pointerleave", () => { mx = my = -9999; });
+  const start = () => { build(); frame(); };
+  (document.fonts?.load ? document.fonts.load("100px UnifrakturMaguntia") : Promise.resolve()).then(start, start);
+  let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { build(); if (reduce) frame(); }, 150); });
+})();
+</script>
+</body>
+</html>
