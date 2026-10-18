@@ -66,11 +66,12 @@ h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 .quote{margin-top:34px;font-family:var(--f-black);font-size:28px;line-height:1.15;color:var(--fg)}
 
-footer{margin-top:96px;display:flex;justify-content:space-between;gap:16px;color:var(--dim);font-size:12px}
-.by{padding:2px 6px;margin:-2px -6px;transition:background .08s,color .08s}
-.by b{font-weight:500;color:var(--fg)}
-.by:hover{background:var(--fg);color:var(--bg)}
-.by:hover b{color:var(--bg)}
+footer{margin-top:96px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;color:var(--dim);font-size:12px}
+.by{display:inline-flex;align-items:baseline;gap:8px;color:var(--dim)}
+.by-x{display:inline-block;color:var(--fg);font-size:16px;line-height:1;transition:transform .45s cubic-bezier(.7,-0.4,.3,1.4)}
+.by-n{font-family:var(--f-black);font-size:26px;line-height:1;color:var(--fg);min-width:4.2em;text-align:left}
+.by:hover .by-x,.by:focus-visible .by-x{transform:rotate(180deg)}
+.by:hover .by-s,.by:focus-visible .by-s{color:var(--fg)}
 
 @media (max-width:760px){
   .body{grid-template-columns:1fr 1fr;gap:32px 24px}
@@ -108,7 +109,7 @@ footer{margin-top:96px;display:flex;justify-content:space-between;gap:16px;color
     </div>
   </div>
 
-  <footer><span>psinna55 &copy; 2026</span><a class="by" href="https://t.me/holyfear" target="_blank" rel="noopener">site by <b>holyfear</b> &#8599;</a></footer>
+  <footer><span>psinna55 &copy; 2026</span><a class="by" id="by" href="https://t.me/holyfear" target="_blank" rel="noopener"><span class="by-s">site by</span><span class="by-x">&#10013;</span><span class="by-n" id="by-n">holyfear</span></a></footer>
 </div>
 
 <script>
@@ -140,6 +141,23 @@ document.getElementById("ds").addEventListener("click", () => {
   if (navigator.clipboard?.writeText) navigator.clipboard.writeText("psinna55").then(() => done("copied"), fallback);
   else fallback();
 });
+
+(() => {
+  const by = document.getElementById("by"), n = document.getElementById("by-n");
+  const word = "holyfear", abc = "abcdefghijklmnopqrstuvwxyz";
+  let timer = null;
+  const run = () => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    clearInterval(timer);
+    let f = 0;
+    timer = setInterval(() => {
+      n.textContent = word.split("").map((c, i) => i < f / 2 ? c : abc[Math.random() * 26 | 0]).join("");
+      if (++f > word.length * 2) { clearInterval(timer); n.textContent = word; }
+    }, 40);
+  };
+  by.addEventListener("pointerenter", run);
+  by.addEventListener("focus", run);
+})();
 
 const clock = document.getElementById("clock");
 const tick = () => { try { clock.textContent = new Date().toLocaleTimeString("ru-RU",{timeZone:"Europe/Moscow",hour:"2-digit",minute:"2-digit"}) + " msk"; } catch(e){} };
