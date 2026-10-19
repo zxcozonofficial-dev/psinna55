@@ -74,8 +74,19 @@ footer{margin-top:96px;display:flex;justify-content:space-between;align-items:fl
 .by:hover .by-s,.by:focus-visible .by-s{color:var(--fg)}
 
 @media (max-width:760px){
-  .body{grid-template-columns:1fr 1fr;gap:32px 24px}
+  .body{grid-template-columns:1fr 1fr;gap:32px 24px;margin-top:44px}
   .body .col:last-child{grid-column:1 / -1}
+  #name{height:clamp(130px, 40vw, 220px);margin-top:12px}
+  .tiers li{padding:6px;font-size:15px}
+  .lnk{padding:12px 6px;font-size:16px;border-bottom:1px solid var(--line)}
+  .links{gap:0}
+  .quote{margin-top:28px}
+  footer{margin-top:64px}
+}
+@media (hover:none){
+  .lnk:hover{background:none;color:inherit}
+  .lnk:hover .t,.lnk:hover .a{color:var(--dim)}
+  .lnk:active{background:var(--fg);color:var(--bg)}
 }
 </style>
 </head>
@@ -123,9 +134,15 @@ const fill = (id, list) => {
 fill("cis", CIS); fill("at", AT);
 const rows = document.querySelectorAll(".tiers li");
 const lit = k => rows.forEach(r => r.classList.toggle("lit", r.dataset.k === k));
+let pinned = null;
 rows.forEach(r => {
-  r.addEventListener("pointerenter", () => lit(r.dataset.k));
-  r.addEventListener("pointerleave", () => lit(null));
+  r.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") lit(r.dataset.k); });
+  r.addEventListener("pointerleave", e => { if (e.pointerType === "mouse") lit(null); });
+  r.addEventListener("pointerup", e => {
+    if (e.pointerType === "mouse") return;
+    pinned = pinned === r.dataset.k ? null : r.dataset.k;
+    lit(pinned);
+  });
   r.addEventListener("focus", () => lit(r.dataset.k));
   r.addEventListener("blur", () => lit(null));
 });
@@ -193,10 +210,10 @@ tick(); setInterval(tick, 20000);
     o.fillStyle = "#fff"; o.textBaseline = "middle";
     o.fillText("psinna55", 0, H * 0.54);
     const d = o.getImageData(0, 0, W, H).data;
-    const step = W < 500 ? 2 : 3;
+    const step = W < 500 ? 2 : 3, base = W < 500 ? 1.5 : 1.1;
     P = [];
     for (let y = 0; y < H; y += step) for (let x = 0; x < W; x += step){
-      if (d[(y * W + x) * 4 + 3] > 128) P.push({hx:x, hy:y, x, y, vx:0, vy:0, s: Math.random() < .15 ? 1.6 : 1.1});
+      if (d[(y * W + x) * 4 + 3] > 128) P.push({hx:x, hy:y, x, y, vx:0, vy:0, s: Math.random() < .15 ? base + .5 : base});
     }
   }
 
@@ -217,9 +234,18 @@ tick(); setInterval(tick, 20000);
   }
 
   const pos = e => { const r = cv.getBoundingClientRect(); mx = e.clientX - r.left; my = e.clientY - r.top; };
+  const burst = e => {
+    const r = cv.getBoundingClientRect(), bx = e.clientX - r.left, by = e.clientY - r.top;
+    for (const p of P){
+      const dx = p.x - bx, dy = p.y - by, d = Math.hypot(dx, dy) || 1, f = Math.max(0, 1 - d / 220) * 38;
+      p.vx += dx / d * f + (Math.random() - .5) * 4; p.vy += dy / d * f + (Math.random() - .5) * 4;
+    }
+  };
   cv.addEventListener("pointermove", pos);
-  cv.addEventListener("pointerdown", pos);
+  cv.addEventListener("pointerdown", e => { if (e.pointerType === "mouse") pos(e); else burst(e); });
   cv.addEventListener("pointerleave", () => { mx = my = -9999; });
+  cv.addEventListener("pointerup", e => { if (e.pointerType !== "mouse") mx = my = -9999; });
+  cv.addEventListener("pointercancel", () => { mx = my = -9999; });
   const start = () => { build(); frame(); };
   (document.fonts?.load ? document.fonts.load("100px UnifrakturMaguntia") : Promise.resolve()).then(start, start);
   let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { build(); if (reduce) frame(); }, 150); });
