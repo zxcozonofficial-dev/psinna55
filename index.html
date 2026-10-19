@@ -64,7 +64,8 @@ a{color:inherit;text-decoration:none}
 @keyframes pulse{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.enter .e1{animation:none}}
 
-#name{display:block;width:100%;height:clamp(150px, 30vw, 320px);margin-top:24px;cursor:crosshair;touch-action:pan-y}
+#name{position:relative;width:100%;height:clamp(150px, 30vw, 320px);margin-top:24px;cursor:crosshair;touch-action:pan-y}
+#name-cv{position:absolute;top:-110px;left:50%;width:100vw;height:calc(100% + 220px);transform:translateX(-50%);pointer-events:none;display:block}
 h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 .sub{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--dim);font-size:13px;margin-top:6px}
@@ -135,7 +136,7 @@ footer{margin-top:96px;display:flex;justify-content:space-between;align-items:fl
   </div>
 
   <h1>psinna55</h1>
-  <canvas id="name" aria-hidden="true"></canvas>
+  <div id="name" aria-hidden="true"><canvas id="name-cv"></canvas></div>
   <div class="sub"><span><b>40</b> pts cis</span><span>i dont play on tier</span></div>
 
   <div class="body">
@@ -318,24 +319,27 @@ tick(); setInterval(tick, 20000);
 })();
 
 (() => {
-  const cv = document.getElementById("name"), ctx = cv.getContext("2d");
+  const box = document.getElementById("name"), cv = document.getElementById("name-cv"), ctx = cv.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let P = [], W = 0, H = 0, dpr = 1, mx = -9999, my = -9999;
+  let P = [], W = 0, H = 0, dpr = 1, mx = -9999, my = -9999, cx = 0, cy = 0;
 
   function build(){
     dpr = Math.min(devicePixelRatio || 1, 2);
     W = cv.clientWidth; H = cv.clientHeight;
     cv.width = W * dpr; cv.height = H * dpr;
+    const br = box.getBoundingClientRect(), cr = cv.getBoundingClientRect();
+    const ox = br.left - cr.left, oy = br.top - cr.top, BW = br.width, BH = br.height;
+    cx = ox + BW / 2; cy = oy + BH / 2;
     const off = document.createElement("canvas"); off.width = W; off.height = H;
     const o = off.getContext("2d");
-    let fs = H * 0.95;
+    let fs = BH * 0.95;
     o.font = `${fs}px UnifrakturMaguntia, serif`;
     const w = o.measureText("psinna55").width;
-    if (w > W * 0.98) { fs *= (W * 0.98) / w; o.font = `${fs}px UnifrakturMaguntia, serif`; }
+    if (w > BW * 0.98) { fs *= (BW * 0.98) / w; o.font = `${fs}px UnifrakturMaguntia, serif`; }
     o.fillStyle = "#fff"; o.textBaseline = "middle";
-    o.fillText("psinna55", 0, H * 0.54);
+    o.fillText("psinna55", ox, oy + BH * 0.54);
     const d = o.getImageData(0, 0, W, H).data;
-    const step = W < 500 ? 2 : 3, base = W < 500 ? 1.5 : 1.1;
+    const step = BW < 500 ? 2 : 3, base = BW < 500 ? 1.5 : 1.1;
     P = [];
     for (let y = 0; y < H; y += step) for (let x = 0; x < W; x += step){
       if (d[(y * W + x) * 4 + 3] > 128) P.push({hx:x, hy:y, x, y, vx:0, vy:0, s: Math.random() < .15 ? base + .5 : base});
@@ -348,7 +352,7 @@ tick(); setInterval(tick, 20000);
     ctx.fillStyle = "#f0f0f0";
     const R = 70, R2 = R * R;
     const bass = AUDIO.bass, hit = AUDIO.hit, kick = AUDIO.kick;
-    const cx = W / 2, cy = H / 2, sc = 1 + Math.max(0, bass - .5) * .08 + hit * .25, jit = hit * hit * 120 + Math.max(0, bass - .6) * 1.2;
+    const sc = 1 + Math.max(0, bass - .5) * .08 + hit * .25, jit = hit * hit * 120 + Math.max(0, bass - .6) * 1.2;
     for (const p of P){
       const dx = p.x - mx, dy = p.y - my, d2 = dx*dx + dy*dy;
       if (d2 < R2){ const f = (1 - d2 / R2) * 6, d = Math.sqrt(d2) || 1; p.vx += dx / d * f; p.vy += dy / d * f; }
@@ -371,11 +375,11 @@ tick(); setInterval(tick, 20000);
       p.vx += dx / d * f + (Math.random() - .5) * 4; p.vy += dy / d * f + (Math.random() - .5) * 4;
     }
   };
-  cv.addEventListener("pointermove", pos);
-  cv.addEventListener("pointerdown", e => { if (e.pointerType === "mouse") pos(e); else burst(e); });
-  cv.addEventListener("pointerleave", () => { mx = my = -9999; });
-  cv.addEventListener("pointerup", e => { if (e.pointerType !== "mouse") mx = my = -9999; });
-  cv.addEventListener("pointercancel", () => { mx = my = -9999; });
+  box.addEventListener("pointermove", pos);
+  box.addEventListener("pointerdown", e => { if (e.pointerType === "mouse") pos(e); else burst(e); });
+  box.addEventListener("pointerleave", () => { mx = my = -9999; });
+  box.addEventListener("pointerup", e => { if (e.pointerType !== "mouse") mx = my = -9999; });
+  box.addEventListener("pointercancel", () => { mx = my = -9999; });
   const start = () => { build(); frame(); };
   (document.fonts?.load ? document.fonts.load("100px UnifrakturMaguntia") : Promise.resolve()).then(start, start);
   let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { build(); if (reduce) frame(); }, 150); });
