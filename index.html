@@ -250,7 +250,7 @@ const AUDIO = { bass:0, level:0, hit:0, kick:false, bins:null };
   const grain = document.getElementById("grain"), flash = document.getElementById("flash"), wrap = document.querySelector(".wrap");
   const bg = document.getElementById("bg"), bctx = bg.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const DROP = 15;
+  const DROP = 15, VOL = .3;
   let an = null, avg = 0, flashV = 0, lastKick = 0, dust = [];
 
   const setup = () => {
@@ -259,7 +259,8 @@ const AUDIO = { bass:0, level:0, hit:0, kick:false, bins:null };
       const ac = new (window.AudioContext || window.webkitAudioContext)();
       const src = ac.createMediaElementSource(audio);
       an = ac.createAnalyser(); an.fftSize = 256; an.smoothingTimeConstant = .5;
-      src.connect(an); an.connect(ac.destination);
+      const gain = ac.createGain(); gain.gain.value = VOL;
+      src.connect(an); an.connect(gain); gain.connect(ac.destination);
       AUDIO.bins = new Uint8Array(an.frequencyBinCount);
       if (ac.state === "suspended") ac.resume();
     } catch(e){ an = null; }
@@ -318,7 +319,7 @@ const AUDIO = { bass:0, level:0, hit:0, kick:false, bins:null };
 
   enter.addEventListener("click", () => {
     setup();
-    audio.volume = .7;
+    audio.volume = an ? 1 : VOL;
     try { audio.currentTime = DROP; } catch(e){}
     audio.play().then(() => setState(true), () => setState(false));
     enter.classList.add("gone");
