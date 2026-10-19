@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>psinna55</title>
 <meta name="description" content="psinna55, minecraft pvp. tiers cis / atiers.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="psinna55">
+<meta property="og:title" content="psinna55">
+<meta property="og:description" content="minecraft pvp &middot; cis / atiers">
+<meta property="og:url" content="https://zxcozonofficial-dev.github.io/psinna55/">
+<meta property="og:image" content="https://zxcozonofficial-dev.github.io/psinna55/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://zxcozonofficial-dev.github.io/psinna55/og.png">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23000'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23f0f0f0'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -90,7 +100,21 @@ h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .lnk:hover{background:var(--fg);color:var(--bg)}
 .lnk:hover .t,.lnk:hover .a{color:var(--bg)}
 
-.quote{margin-top:34px;font-family:var(--f-black);font-size:28px;line-height:1.15;color:var(--fg)}
+.quote{margin-top:34px;font-family:var(--f-black);font-size:28px;line-height:1.15;color:var(--fg);cursor:pointer;user-select:none;display:inline-block}
+
+.invfx{position:fixed;inset:0;z-index:29;background:#fff;mix-blend-mode:difference;pointer-events:none;opacity:0;transition:opacity .08s}
+html.inv .invfx{opacity:1}
+.heart{position:fixed;top:-40px;z-index:28;pointer-events:none;color:var(--fg);font-family:var(--f-black);animation:fall linear forwards}
+@keyframes fall{to{transform:translate(var(--dx), calc(100vh + 80px)) rotate(var(--r))}}
+
+#cur{position:fixed;inset:0;z-index:40;pointer-events:none;display:none}
+.dot{position:fixed;left:0;top:0;z-index:41;pointer-events:none;width:8px;height:8px;margin:-4px 0 0 -4px;background:#fff;mix-blend-mode:difference;display:none;
+  transition:width .15s,height .15s,margin .15s,background .15s,border .15s}
+.dot.big{width:26px;height:26px;margin:-13px 0 0 -13px;background:transparent;border:1px solid #fff}
+@media (pointer:fine){
+  html.cur, html.cur *{cursor:none !important}
+  html.cur #cur, html.cur .dot{display:block}
+}
 
 footer{margin-top:96px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;color:var(--dim);font-size:12px}
 .by{display:inline-flex;align-items:baseline;gap:8px;color:var(--dim)}
@@ -129,6 +153,10 @@ footer{margin-top:96px;display:flex;justify-content:space-between;align-items:fl
 
 <audio id="track" src="track.mp3" preload="auto"></audio>
 
+<div class="invfx" aria-hidden="true"></div>
+<canvas id="cur" aria-hidden="true"></canvas>
+<div class="dot" id="dot" aria-hidden="true"></div>
+
 <div class="wrap">
   <div class="top">
     <span>minecraft pvp &middot; <span id="clock">msk</span></span>
@@ -154,7 +182,7 @@ footer{margin-top:96px;display:flex;justify-content:space-between;align-items:fl
         <a class="lnk" href="https://t.me/psinna55" target="_blank" rel="noopener"><span class="t">tg</span><span>@psinna55</span><span class="a">&#8599;</span></a>
         <button class="lnk" id="ds" type="button"><span class="t">ds</span><span id="ds-name">psinna55</span><span class="a" id="ds-a">copy</span></button>
       </div>
-      <div class="quote">i love pipa &#9829;</div>
+      <div class="quote" id="pipa" role="button" tabindex="0">i love pipa &#9829;</div>
     </div>
   </div>
 
@@ -352,7 +380,7 @@ tick(); setInterval(tick, 20000);
     ctx.fillStyle = "#f0f0f0";
     const R = 70, R2 = R * R;
     const bass = AUDIO.bass, hit = AUDIO.hit, kick = AUDIO.kick;
-    const sc = 1 + Math.max(0, bass - .5) * .08 + hit * .25, jit = hit * hit * 120 + Math.max(0, bass - .6) * 1.2;
+    const sc = 1 + Math.max(0, bass - .5) * .08 + hit * .25, jit = Math.min(2.6, hit * hit * 120 + Math.max(0, bass - .6) * 1.2);
     for (const p of P){
       const dx = p.x - mx, dy = p.y - my, d2 = dx*dx + dy*dy;
       if (d2 < R2){ const f = (1 - d2 / R2) * 6, d = Math.sqrt(d2) || 1; p.vx += dx / d * f; p.vy += dy / d * f; }
@@ -383,6 +411,79 @@ tick(); setInterval(tick, 20000);
   const start = () => { build(); frame(); };
   (document.fonts?.load ? document.fonts.load("100px UnifrakturMaguntia") : Promise.resolve()).then(start, start);
   let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { build(); if (reduce) frame(); }, 150); });
+})();
+
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let busy = false, buf = "";
+  const party = () => {
+    if (busy) return; busy = true;
+    document.documentElement.classList.add("inv");
+    const n = reduce ? 0 : 36;
+    for (let i = 0; i < n; i++){
+      const h = document.createElement("span");
+      h.className = "heart"; h.textContent = "♥";
+      h.style.left = Math.random() * 100 + "vw";
+      h.style.fontSize = 14 + Math.random() * 30 + "px";
+      h.style.opacity = .5 + Math.random() * .5;
+      h.style.setProperty("--dx", (Math.random() - .5) * 160 + "px");
+      h.style.setProperty("--r", (Math.random() - .5) * 720 + "deg");
+      h.style.animationDuration = 1.6 + Math.random() * 1.6 + "s";
+      h.style.animationDelay = Math.random() * .5 + "s";
+      document.body.appendChild(h);
+      h.addEventListener("animationend", () => h.remove());
+    }
+    setTimeout(() => { document.documentElement.classList.remove("inv"); busy = false; }, 1200);
+  };
+  addEventListener("keydown", e => {
+    if (e.key.length !== 1) return;
+    buf = (buf + e.key.toLowerCase()).slice(-4);
+    if (buf === "pipa" || buf === "зшзф") party();
+  });
+  const q = document.getElementById("pipa");
+  q.addEventListener("click", party);
+  q.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); party(); } });
+})();
+
+(() => {
+  if (!matchMedia("(pointer:fine)").matches) return;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const cv = document.getElementById("cur"), c = cv.getContext("2d"), dot = document.getElementById("dot");
+  let x = -100, y = -100, px = x, py = y, D = [], dpr = 1, seen = false;
+  const size = () => { dpr = Math.min(devicePixelRatio || 1, 2); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; c.setTransform(dpr,0,0,dpr,0,0); };
+  size(); addEventListener("resize", size);
+  addEventListener("pointermove", e => {
+    if (e.pointerType !== "mouse") return;
+    if (!seen){ seen = true; document.documentElement.classList.add("cur"); px = e.clientX; py = e.clientY; }
+    x = e.clientX; y = e.clientY;
+    dot.style.transform = `translate(${x}px, ${y}px)`;
+    dot.classList.toggle("big", !!e.target.closest("a, button, .tiers li, #pipa, .enter"));
+  });
+  document.addEventListener("mouseleave", () => { dot.style.transform = "translate(-100px,-100px)"; });
+  const loop = () => {
+    const dx = x - px, dy = y - py, dist = Math.hypot(dx, dy);
+    if (!reduce){
+      const n = Math.min(14, Math.floor(dist / 3));
+      for (let i = 0; i < n; i++){
+        const t = i / n;
+        D.push({ x: px + dx * t + (Math.random() - .5) * 4, y: py + dy * t + (Math.random() - .5) * 4,
+                 vx: (Math.random() - .5) * .8, vy: (Math.random() - .5) * .8 + .2, l: 1, s: Math.random() < .2 ? 2 : 1.2 });
+      }
+      if (AUDIO.kick && seen) for (let i = 0; i < 16; i++){ const a = Math.random() * 6.283, v = 1 + Math.random() * 3; D.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, l: 1, s: 1.4 }); }
+    }
+    px = x; py = y;
+    c.clearRect(0, 0, innerWidth, innerHeight);
+    for (let i = D.length - 1; i >= 0; i--){
+      const p = D[i];
+      p.x += p.vx; p.y += p.vy; p.vx *= .96; p.vy *= .96; p.l -= .025;
+      if (p.l <= 0){ D.splice(i, 1); continue; }
+      c.fillStyle = `rgba(240,240,240,${p.l.toFixed(3)})`;
+      c.fillRect(p.x, p.y, p.s, p.s);
+    }
+    if (D.length > 900) D.splice(0, D.length - 900);
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
 })();
 </script>
 </body>
