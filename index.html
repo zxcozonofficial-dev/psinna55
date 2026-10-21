@@ -242,7 +242,7 @@ document.getElementById("ds").addEventListener("click", () => {
   by.addEventListener("focus", run);
 })();
 
-const AUDIO = { bass:0, level:0, hit:0, kick:false, bins:null };
+const AUDIO = { bass:0, level:0, hit:0, kick:false, bins:null, bands:new Float32Array(8) };
 
 (() => {
   const enter = document.getElementById("enter"), audio = document.getElementById("track");
@@ -252,6 +252,7 @@ const AUDIO = { bass:0, level:0, hit:0, kick:false, bins:null };
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const DROP = 15, VOL = .3;
   let an = null, avg = 0, flashV = 0, lastKick = 0, dust = [];
+  const EDGES = [0, 1, 2, 4, 7, 11, 18, 30, 55], bAvg = new Float32Array(8), bMax = new Float32Array(8).fill(.3);
 
   const setup = () => {
     if (an) return;
@@ -288,7 +289,15 @@ const AUDIO = { bass:0, level:0, hit:0, kick:false, bins:null };
       AUDIO.hit = Math.max(0, AUDIO.bass - avg);
       if (AUDIO.bass > .5 && AUDIO.hit > .045 && now - lastKick > 200){ AUDIO.kick = true; lastKick = now; }
       avg = avg * .93 + AUDIO.bass * .07;
-    } else { AUDIO.bass *= .9; AUDIO.level *= .9; AUDIO.hit = 0; }
+      for (let i = 0; i < 8; i++){
+        let v = 0; for (let j = EDGES[i]; j < EDGES[i + 1]; j++) v += b[j];
+        v = v / (EDGES[i + 1] - EDGES[i]) / 255;
+        bAvg[i] = bAvg[i] * .985 + v * .015;
+        bMax[i] = Math.max(v, bMax[i] * .996);
+        const lo = bAvg[i] * .8, e = Math.min(1, Math.max(0, (v - lo) / (bMax[i] - lo + .02)));
+        AUDIO.bands[i] += (e - AUDIO.bands[i]) * (e > AUDIO.bands[i] ? .6 : .14);
+      }
+    } else { AUDIO.bass *= .9; AUDIO.level *= .9; AUDIO.hit = 0; for (let i = 0; i < 8; i++) AUDIO.bands[i] *= .9; }
 
     if (AUDIO.kick){
       flashV = 1;
@@ -350,11 +359,13 @@ tick(); setInterval(tick, 20000);
 (() => {
   const box = document.getElementById("name"), cv = document.getElementById("name-cv"), ctx = cv.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let P = [], W = 0, H = 0, dpr = 1, mx = -9999, my = -9999, cx = 0, cy = 0;
+  let P = [], W = 0, H = 0, dpr = 1, mx = -9999, my = -9999, cx = 0, cy = 0, BHh = 0, LC = [], t0 = performance.now();
+  const MAP = [0, 3, 5, 7, 6, 4, 2, 1];
 
   function build(){
     dpr = Math.min(devicePixelRatio || 1, 2);
     W = cv.clientWidth; H = cv.clientHeight;
+    if (W < 2 || H < 2) return;
     cv.width = W * dpr; cv.height = H * dpr;
     const br = box.getBoundingClientRect(), cr = cv.getBoundingClientRect();
     const ox = br.left - cr.left, oy = br.top - cr.top, BW = br.width, BH = br.height;
@@ -368,10 +379,17 @@ tick(); setInterval(tick, 20000);
     o.fillStyle = "#fff"; o.textBaseline = "middle";
     o.fillText("psinna55", ox, oy + BH * 0.54);
     const d = o.getImageData(0, 0, W, H).data;
+    const word = "psinna55", ed = [];
+    for (let i = 0; i <= word.length; i++) ed.push(ox + o.measureText(word.slice(0, i)).width);
+    LC = ed.slice(0, -1).map((e, i) => (e + ed[i + 1]) / 2);
+    BHh = BH;
     const step = BW < 500 ? 2 : 3, base = BW < 500 ? 1.5 : 1.1;
     P = [];
     for (let y = 0; y < H; y += step) for (let x = 0; x < W; x += step){
-      if (d[(y * W + x) * 4 + 3] > 128) P.push({hx:x, hy:y, x, y, vx:0, vy:0, s: Math.random() < .15 ? base + .5 : base});
+      if (d[(y * W + x) * 4 + 3] > 128){
+        let li = 0; while (li < 7 && x >= ed[li + 1]) li++;
+        P.push({hx:x, hy:y, x, y, vx:0, vy:0, li, s: Math.random() < .15 ? base + .5 : base});
+      }
     }
   }
 
@@ -381,15 +399,23 @@ tick(); setInterval(tick, 20000);
     ctx.fillStyle = "#f0f0f0";
     const R = 70, R2 = R * R;
     const bass = AUDIO.bass, hit = AUDIO.hit, kick = AUDIO.kick;
-    const sc = 1 + Math.max(0, bass - .5) * .08 + hit * .25, jit = Math.min(2.6, hit * hit * 120 + Math.max(0, bass - .6) * 1.2);
+    const sc = 1 + Math.max(0, bass - .5) * .05 + hit * .2, jit = Math.min(1.8, hit * hit * 90 + Math.max(0, bass - .6));
+    const tt = (performance.now() - t0) / 1000, lvl = AUDIO.level, wav = lvl * BHh * .05;
+    const L = [];
+    for (let i = 0; i < 8; i++){
+      const e = AUDIO.bands[MAP[i]], r = (i % 2 ? 1 : -1) * (e - .25) * .16;
+      L.push({ lift: Math.pow(e, 1.3) * BHh * .17, s: 1 + e * .16, c: Math.cos(r), sn: Math.sin(r) });
+    }
     for (const p of P){
       const dx = p.x - mx, dy = p.y - my, d2 = dx*dx + dy*dy;
       if (d2 < R2){ const f = (1 - d2 / R2) * 6, d = Math.sqrt(d2) || 1; p.vx += dx / d * f; p.vy += dy / d * f; }
       if (jit > .05){ p.vx += (Math.random() - .5) * jit; p.vy += (Math.random() - .5) * jit; }
       if (kick){ const kx = p.hx - cx, ky = p.hy - cy, kd = Math.hypot(kx, ky) || 1; p.vx += kx / kd * 5 * Math.random() + (Math.random() - .5) * 3; p.vy += ky / kd * 5 * Math.random() + (Math.random() - .5) * 3; }
-      const tx = cx + (p.hx - cx) * sc, ty = cy + (p.hy - cy) * sc;
-      p.vx += (tx - p.x) * .06; p.vy += (ty - p.y) * .06;
-      p.vx *= .82; p.vy *= .82;
+      const l = L[p.li], lx = LC[p.li], rx = p.hx - lx, ry = p.hy - cy;
+      const ax = lx + (rx * l.c - ry * l.sn) * l.s, ay = cy + (rx * l.sn + ry * l.c) * l.s - l.lift + Math.sin(p.hx * .018 + tt * 5) * wav;
+      const tx = cx + (ax - cx) * sc, ty = cy + (ay - cy) * sc;
+      p.vx += (tx - p.x) * .1; p.vy += (ty - p.y) * .1;
+      p.vx *= .78; p.vy *= .78;
       p.x += p.vx; p.y += p.vy;
       ctx.fillRect(p.x, p.y, p.s, p.s);
     }
@@ -409,7 +435,7 @@ tick(); setInterval(tick, 20000);
   box.addEventListener("pointerleave", () => { mx = my = -9999; });
   box.addEventListener("pointerup", e => { if (e.pointerType !== "mouse") mx = my = -9999; });
   box.addEventListener("pointercancel", () => { mx = my = -9999; });
-  const start = () => { build(); frame(); };
+  const start = () => { build(); frame(); if (!P.length) { const ro = new ResizeObserver(() => { if (!P.length) build(); if (P.length) ro.disconnect(); }); ro.observe(cv); } };
   (document.fonts?.load ? document.fonts.load("100px UnifrakturMaguntia") : Promise.resolve()).then(start, start);
   let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { build(); if (reduce) frame(); }, 150); });
 })();
