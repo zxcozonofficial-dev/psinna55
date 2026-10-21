@@ -38,9 +38,10 @@ a{color:inherit;text-decoration:none}
 ::selection{background:var(--fg);color:var(--bg)}
 :focus-visible{outline:1px solid var(--fg);outline-offset:4px}
 
-.grain{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.09;mix-blend-mode:screen}
+.grain{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.09;will-change:opacity}
 
 .wrap{
+  will-change:transform;
   max-width:1040px;margin:0 auto;position:relative;z-index:1;
   padding-left:max(16px, env(safe-area-inset-left, 0px));
   padding-right:max(16px, env(safe-area-inset-right, 0px));
@@ -58,8 +59,7 @@ a{color:inherit;text-decoration:none}
 .bg{position:fixed;inset:0;z-index:0;pointer-events:none}
 .flash{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;
   background:radial-gradient(ellipse 70% 45% at 50% 22%, rgba(255,255,255,.16), transparent 70%)}
-.wrap.shake{animation:shake .14s steps(3)}
-@keyframes shake{33%{transform:translate(2px,-1px)}66%{transform:translate(-2px,1px)}}
+
 
 .enter{
   position:fixed;inset:0;z-index:10;background:var(--bg);color:var(--fg);border:0;width:100%;
@@ -102,15 +102,15 @@ h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 .quote{margin-top:34px;font-family:var(--f-black);font-size:28px;line-height:1.15;color:var(--fg);cursor:pointer;user-select:none;display:inline-block}
 
-.invfx{position:fixed;inset:0;z-index:29;background:#fff;mix-blend-mode:difference;pointer-events:none;opacity:0;transition:opacity .08s}
-html.inv .invfx{opacity:1}
+.invfx{position:fixed;inset:0;z-index:29;background:#fff;mix-blend-mode:difference;pointer-events:none;display:none}
+html.inv .invfx{display:block}
 .heart{position:fixed;top:-40px;z-index:28;pointer-events:none;color:var(--fg);font-family:var(--f-black);animation:fall linear forwards}
 @keyframes fall{to{transform:translate(var(--dx), calc(100vh + 80px)) rotate(var(--r))}}
 
 #cur{position:fixed;inset:0;z-index:40;pointer-events:none;display:none}
-.dot{position:fixed;left:0;top:0;z-index:41;pointer-events:none;width:8px;height:8px;margin:-4px 0 0 -4px;background:#fff;mix-blend-mode:difference;display:none;
+.dot{position:fixed;left:0;top:0;z-index:41;pointer-events:none;width:8px;height:8px;margin:-4px 0 0 -4px;background:#fff;box-shadow:0 0 0 1px #000;display:none;will-change:transform;
   transition:width .15s,height .15s,margin .15s,background .15s,border .15s}
-.dot.big{width:26px;height:26px;margin:-13px 0 0 -13px;background:transparent;border:1px solid #fff}
+.dot.big{width:26px;height:26px;margin:-13px 0 0 -13px;background:transparent;border:1px solid #fff;box-shadow:0 0 0 1px #000, inset 0 0 0 1px #000}
 @media (pointer:fine){
   html.cur, html.cur *{cursor:none !important}
   html.cur #cur, html.cur .dot{display:block}
@@ -272,7 +272,7 @@ const AUDIO = { bass:0, level:0, hit:0, kick:false, bins:null, bands:new Float32
     dust = Array.from({length:n}, () => ({ x:Math.random()*w, y:Math.random()*h, z:.3 + Math.random()*.7, a:Math.random()*Math.PI*2 }));
   };
   const size = () => {
-    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
     bg.width = innerWidth * dpr; bg.height = innerHeight * dpr;
     bctx.setTransform(dpr,0,0,dpr,0,0);
     seed();
@@ -301,7 +301,7 @@ const AUDIO = { bass:0, level:0, hit:0, kick:false, bins:null, bands:new Float32
 
     if (AUDIO.kick){
       flashV = 1;
-      if (!reduce){ wrap.classList.remove("shake"); void wrap.offsetWidth; wrap.classList.add("shake"); }
+      if (!reduce && wrap.animate) wrap.animate([{transform:"translate(0,0)"},{transform:"translate(2px,-1px)"},{transform:"translate(-2px,1px)"},{transform:"translate(0,0)"}], {duration:140, easing:"steps(3)"});
     }
     flashV *= .88;
     flash.style.opacity = (flashV * .9 + AUDIO.level * .35).toFixed(3);
@@ -309,11 +309,11 @@ const AUDIO = { bass:0, level:0, hit:0, kick:false, bins:null, bands:new Float32
 
     const w = innerWidth, h = innerHeight, sp = reduce ? 0 : .15 + AUDIO.level * 2.2 + flashV * 3;
     bctx.clearRect(0,0,w,h);
+    bctx.fillStyle = "#f0f0f0";
     for (const d of dust){
       d.a += .002; d.y -= sp * d.z; d.x += Math.sin(d.a) * .2 * d.z;
       if (d.y < -4){ d.y = h + 4; d.x = Math.random() * w; }
-      const al = .12 + d.z * .25 + AUDIO.level * .5 * d.z + flashV * .3;
-      bctx.fillStyle = `rgba(240,240,240,${Math.min(1, al).toFixed(3)})`;
+      bctx.globalAlpha = Math.min(1, .12 + d.z * .25 + AUDIO.level * .5 * d.z + flashV * .3);
       const s = d.z * (1.2 + flashV * 1.5);
       bctx.fillRect(d.x, d.y, s, s);
     }
@@ -363,7 +363,7 @@ tick(); setInterval(tick, 20000);
   const MAP = [0, 3, 5, 7, 6, 4, 2, 1];
 
   function build(){
-    dpr = Math.min(devicePixelRatio || 1, 2);
+    dpr = Math.min(devicePixelRatio || 1, 1.5);
     W = cv.clientWidth; H = cv.clientHeight;
     if (W < 2 || H < 2) return;
     cv.width = W * dpr; cv.height = H * dpr;
@@ -477,14 +477,15 @@ tick(); setInterval(tick, 20000);
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const cv = document.getElementById("cur"), c = cv.getContext("2d"), dot = document.getElementById("dot");
   let x = -100, y = -100, px = x, py = y, D = [], dpr = 1, seen = false;
-  const size = () => { dpr = Math.min(devicePixelRatio || 1, 2); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; c.setTransform(dpr,0,0,dpr,0,0); };
+  const size = () => { dpr = Math.min(devicePixelRatio || 1, 1.5); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; c.setTransform(dpr,0,0,dpr,0,0); };
   size(); addEventListener("resize", size);
   addEventListener("pointermove", e => {
     if (e.pointerType !== "mouse") return;
     if (!seen){ seen = true; document.documentElement.classList.add("cur"); px = e.clientX; py = e.clientY; }
     x = e.clientX; y = e.clientY;
     dot.style.transform = `translate(${x}px, ${y}px)`;
-    dot.classList.toggle("big", !!e.target.closest("a, button, .tiers li, #pipa, .enter"));
+    const big = !!(e.target.closest && e.target.closest("a, button, .tiers li, #pipa, .enter"));
+    if (big !== dot.classList.contains("big")) dot.classList.toggle("big", big);
   });
   document.addEventListener("mouseleave", () => { dot.style.transform = "translate(-100px,-100px)"; });
   const loop = () => {
@@ -500,14 +501,18 @@ tick(); setInterval(tick, 20000);
     }
     px = x; py = y;
     c.clearRect(0, 0, innerWidth, innerHeight);
-    for (let i = D.length - 1; i >= 0; i--){
+    c.fillStyle = "#f0f0f0";
+    let k = 0;
+    for (let i = 0; i < D.length; i++){
       const p = D[i];
       p.x += p.vx; p.y += p.vy; p.vx *= .96; p.vy *= .96; p.l -= .025;
-      if (p.l <= 0){ D.splice(i, 1); continue; }
-      c.fillStyle = `rgba(240,240,240,${p.l.toFixed(3)})`;
+      if (p.l <= 0) continue;
+      c.globalAlpha = p.l;
       c.fillRect(p.x, p.y, p.s, p.s);
+      D[k++] = p;
     }
-    if (D.length > 900) D.splice(0, D.length - 900);
+    D.length = Math.min(k, 900);
+    c.globalAlpha = 1;
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
